@@ -24,6 +24,9 @@ jobs:
       - name: make tools
         run: |
           make tools
+      - name: gofmtcheck
+        run: |
+          make gofmtcheck
       - name: gencheck
         run: |
           make gencheck
@@ -33,9 +36,6 @@ jobs:
       - name: tffmtcheck
         run: |
           make tffmtcheck
-      - name: gofmtcheck
-        run: |
-          make gofmtcheck
       - name: terrafmtcheck
         run: |
           make terrafmtcheck
