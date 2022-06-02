@@ -49,7 +49,7 @@ checkovcheck:
 	@echo "==> Checking Terraform code with BridgeCrew Checkov"
 	checkov --skip-framework dockerfile --quiet -d ./
 
-fmtcheck: tfvalidatecheck tffmtcheck gofmtcheck terrafmtcheck
+fmtcheck: gofmtcheck tfvalidatecheck tffmtcheck terrafmtcheck
 
 pr-check: gencheck fmtcheck lint #checkovcheck
 
