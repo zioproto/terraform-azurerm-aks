@@ -4,7 +4,7 @@
 
 -> **NOTE:** The goal of v5.0.0 is to add a GitHub Action based CI pipeline and introduce modern acceptance tests to ensure that future pull requests to this module meet our new standard for AzureRM modules.
 
--> **NOTE:** The module code of v5.0.0 is **exactly the same** as v4.15.0. Users who use v4.15.0 can directly upgrade to v5 without worrying about changes. We promise **NOT** to modify module code in v5 version.
+-> **NOTE:** The module code of v5.0.0 is **exactly the same** as v4.16.0. Users who use v4.16.0 can directly upgrade to v5 without worrying about changes. We promise **NOT** to modify module code in v5 version.
 
 We'll introduce a new CI pipeline into v5 as our foundation for further pull requests. Here is a [demo pipeline](https://github.com/lonegunmanb/terraform-module-azure-subnet/pulls).
 
