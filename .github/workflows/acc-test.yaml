@@ -11,7 +11,7 @@ on:
 
 jobs:
   acc-tests:
-    runs-on: [self-hosted, tfmodule, v0.0.1]
+    runs-on: [self-hosted, tfmodule]
     environment:
       name: acctests
     steps:
