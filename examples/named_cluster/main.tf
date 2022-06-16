@@ -7,37 +7,44 @@ resource "random_id" "prefix" {
 }
 
 resource "azurerm_resource_group" "main" {
+  count = var.create_resource_group ? 1 : 0
+
   name     = coalesce(var.resource_group_name, "${random_id.prefix.hex}-rg")
   location = var.location
 }
 
+locals {
+  resource_group = {
+    name     = var.create_resource_group ? azurerm_resource_group.main[0].name : var.resource_group_name
+    location = var.location
+  }
+}
+
 data "null_data_source" "resource_group" {
   inputs = {
-    name = azurerm_resource_group.main.name
+    name = local.resource_group.name
   }
-
-  depends_on = [azurerm_resource_group.main]
 }
 
 
 resource "azurerm_virtual_network" "test" {
   name                = "${random_id.prefix.hex}-vn"
   address_space       = ["10.52.0.0/16"]
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = local.resource_group.location
+  resource_group_name = local.resource_group.name
 }
 
 resource "azurerm_subnet" "test" {
   name                                           = "${random_id.prefix.hex}-sn"
-  resource_group_name                            = azurerm_resource_group.main.name
+  resource_group_name                            = local.resource_group.name
   virtual_network_name                           = azurerm_virtual_network.test.name
   address_prefixes                               = ["10.52.0.0/24"]
   enforce_private_link_endpoint_network_policies = true
 }
 
 resource "azurerm_user_assigned_identity" "test" {
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+  resource_group_name = local.resource_group.name
+  location            = local.resource_group.location
   name                = "${random_id.prefix.hex}-identity"
 }
 
