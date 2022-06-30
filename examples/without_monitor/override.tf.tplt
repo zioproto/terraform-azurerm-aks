@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "{{ env "TERRAFORM_AZURERM_VERSION" | default ">= 2.90.0, < 3.0.0"}}"
+      version = "{{ env "TERRAFORM_AZURERM_VERSION" | default ">= 3.11.0"}}"
     }
   }
 }

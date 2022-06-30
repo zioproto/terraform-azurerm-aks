@@ -1,7 +1,3 @@
-provider "azurerm" {
-  features {}
-}
-
 resource "random_id" "prefix" {
   byte_length = 8
 }
@@ -24,8 +20,6 @@ data "null_data_source" "resource_group" {
   inputs = {
     name = local.resource_group.name
   }
-
-  depends_on = [azurerm_resource_group.main]
 }
 
 resource "azurerm_virtual_network" "test" {

@@ -351,6 +351,12 @@ variable "node_resource_group" {
   default     = null
 }
 
+variable "disk_encryption_set_id" {
+  description = "(Optional) The ID of the Disk Encryption Set which should be used for the Nodes and Volumes. More information [can be found in the documentation](https://docs.microsoft.com/azure/aks/azure-disk-customer-managed-keys). Changing this forces a new resource to be created."
+  type        = string
+  default     = null
+}
+
 variable "oidc_issuer_enabled" {
   description = "Enable or Disable the OIDC issuer URL. Defaults to false."
   type        = bool

@@ -51,8 +51,10 @@ func TestExamplesNamedCluster(t *testing.T) {
 		assert.True(t, ok)
 		assert.NotNil(t, identity)
 		assert.NotEmptyf(t, identity, "identity should not be empty")
-		identityId, ok := identity["user_assigned_identity_id"]
+		identityIds, ok := identity["identity_ids"]
 		assert.True(t, ok)
-		assert.Regexp(t, regexp.MustCompile("/subscriptions/.+/resourceGroups/.+/providers/Microsoft.ManagedIdentity/userAssignedIdentities/.+"), identityId)
+		identityIdsArray := identityIds.([]interface{})
+		assert.Equal(t, 1, len(identityIdsArray))
+		assert.Regexp(t, regexp.MustCompile("/subscriptions/.+/resourceGroups/.+/providers/Microsoft.ManagedIdentity/userAssignedIdentities/.+"), identityIdsArray[0])
 	})
 }

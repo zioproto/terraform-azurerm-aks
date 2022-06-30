@@ -1,7 +1,3 @@
-provider "azurerm" {
-  features {}
-}
-
 resource "random_id" "prefix" {
   byte_length = 8
 }
@@ -53,10 +49,11 @@ module "aks_cluster_name" {
   cluster_name                         = "test-cluster"
   prefix                               = "prefix"
   resource_group_name                  = data.null_data_source.resource_group.outputs["name"]
+  disk_encryption_set_id               = azurerm_disk_encryption_set.des.id
   enable_log_analytics_workspace       = true
   cluster_log_analytics_workspace_name = "test-cluster"
   enable_kube_dashboard                = false
   net_profile_pod_cidr                 = "10.1.0.0/16"
   identity_type                        = "UserAssigned"
-  user_assigned_identity_id            = azurerm_user_assigned_identity.test.id
+  identity_ids                         = [azurerm_user_assigned_identity.test.id]
 }
