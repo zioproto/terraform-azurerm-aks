@@ -12,3 +12,8 @@ variable "resource_group_name" {
   type    = string
   default = null
 }
+
+variable "key_vault_firewall_bypass_ip_cidr" {
+  type    = string
+  default = null
+}

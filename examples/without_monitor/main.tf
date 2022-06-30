@@ -1,7 +1,3 @@
-provider "azurerm" {
-  features {}
-}
-
 resource "random_id" "prefix" {
   byte_length = 8
 }
@@ -45,7 +41,8 @@ module "aks_without_monitor" {
   source                         = "../.."
   prefix                         = "prefix2-${random_id.prefix.hex}"
   resource_group_name            = data.null_data_source.resource_group.outputs["name"]
+  disk_encryption_set_id         = azurerm_disk_encryption_set.des.id
   enable_log_analytics_workspace = false
-  enable_kube_dashboard          = false
   net_profile_pod_cidr           = "10.1.0.0/16"
+  tags                           = {}
 }

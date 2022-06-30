@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/gruntwork-io/terratest v0.40.3
-	github.com/lonegunmanb/terraform-module-test-helper v0.0.13
+	github.com/lonegunmanb/terraform-module-test-helper v0.0.16
 )
 
 require github.com/stretchr/testify v1.7.0
