@@ -46,8 +46,7 @@ tflint:
 lint: golint tflint
 
 checkovcheck:
-	@echo "==> Checking Terraform code with BridgeCrew Checkov"
-	checkov --skip-framework dockerfile --quiet -d ./
+	@sh "$(CURDIR)/scripts/checkovcheck.sh"
 
 fmtcheck: gofmtcheck tfvalidatecheck tffmtcheck terrafmtcheck
 

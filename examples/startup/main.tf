@@ -40,12 +40,13 @@ resource "azurerm_subnet" "test" {
 module "aks" {
   source                           = "../.."
   prefix                           = "prefix-${random_id.prefix.hex}"
-  resource_group_name              = azurerm_resource_group.main.name
+  resource_group_name              = local.resource_group.name
   client_id                        = var.client_id
   client_secret                    = var.client_secret
   network_plugin                   = "azure"
   vnet_subnet_id                   = azurerm_subnet.test.id
   os_disk_size_gb                  = 60
+  disk_encryption_set_id           = azurerm_disk_encryption_set.des.id
   enable_http_application_routing  = true
   enable_azure_policy              = true
   enable_host_encryption           = true
