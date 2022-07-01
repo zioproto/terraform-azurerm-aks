@@ -38,11 +38,15 @@ resource "azurerm_subnet" "test" {
 }
 
 module "aks_without_monitor" {
-  source                         = "../.."
-  prefix                         = "prefix2-${random_id.prefix.hex}"
-  resource_group_name            = data.null_data_source.resource_group.outputs["name"]
-  disk_encryption_set_id         = azurerm_disk_encryption_set.des.id
-  enable_log_analytics_workspace = false
-  net_profile_pod_cidr           = "10.1.0.0/16"
-  tags                           = {}
+  source                           = "../.."
+  prefix                           = "prefix2-${random_id.prefix.hex}"
+  resource_group_name              = local.resource_group.name
+  disk_encryption_set_id           = azurerm_disk_encryption_set.des.id
+  enable_role_based_access_control = true
+  private_cluster_enabled          = true
+  rbac_aad_managed                 = true
+  admin_username                   = null
+#checkov:skip=CKV_AZURE_4:The logging is turn off for demo purpose. DO NOT DO THIS IN PRODUCTION ENVIRONMENT!
+  enable_log_analytics_workspace   = false
+  net_profile_pod_cidr             = "10.1.0.0/16"
 }

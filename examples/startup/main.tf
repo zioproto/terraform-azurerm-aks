@@ -40,7 +40,7 @@ resource "azurerm_subnet" "test" {
 module "aks" {
   source                           = "../.."
   prefix                           = "prefix-${random_id.prefix.hex}"
-  resource_group_name              = azurerm_resource_group.main.name
+  resource_group_name              = local.resource_group.name
   client_id                        = var.client_id
   client_secret                    = var.client_secret
   network_plugin                   = "azure"

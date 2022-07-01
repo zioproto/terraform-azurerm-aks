@@ -22,7 +22,6 @@ data "null_data_source" "resource_group" {
   }
 }
 
-
 resource "azurerm_virtual_network" "test" {
   name                = "${random_id.prefix.hex}-vn"
   address_space       = ["10.52.0.0/16"]
@@ -48,11 +47,14 @@ module "aks_cluster_name" {
   source                               = "../.."
   cluster_name                         = "test-cluster"
   prefix                               = "prefix"
-  resource_group_name                  = data.null_data_source.resource_group.outputs["name"]
+  resource_group_name                  = local.resource_group.name
   disk_encryption_set_id               = azurerm_disk_encryption_set.des.id
+  enable_role_based_access_control     = true
+  rbac_aad_managed                     = true
   enable_log_analytics_workspace       = true
+  private_cluster_enabled              = true
+  admin_username                       = null
   cluster_log_analytics_workspace_name = "test-cluster"
-  enable_kube_dashboard                = false
   net_profile_pod_cidr                 = "10.1.0.0/16"
   identity_type                        = "UserAssigned"
   identity_ids                         = [azurerm_user_assigned_identity.test.id]
