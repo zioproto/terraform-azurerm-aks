@@ -16,12 +16,6 @@ locals {
   }
 }
 
-data "null_data_source" "resource_group" {
-  inputs = {
-    name = local.resource_group.name
-  }
-}
-
 resource "azurerm_virtual_network" "test" {
   name                = "${random_id.prefix.hex}-vn"
   address_space       = ["10.52.0.0/16"]
@@ -46,7 +40,7 @@ module "aks_without_monitor" {
   private_cluster_enabled          = true
   rbac_aad_managed                 = true
   admin_username                   = null
-#checkov:skip=CKV_AZURE_4:The logging is turn off for demo purpose. DO NOT DO THIS IN PRODUCTION ENVIRONMENT!
-  enable_log_analytics_workspace   = false
-  net_profile_pod_cidr             = "10.1.0.0/16"
+  #checkov:skip=CKV_AZURE_4:The logging is turn off for demo purpose. DO NOT DO THIS IN PRODUCTION ENVIRONMENT!
+  enable_log_analytics_workspace = false
+  net_profile_pod_cidr           = "10.1.0.0/16"
 }
