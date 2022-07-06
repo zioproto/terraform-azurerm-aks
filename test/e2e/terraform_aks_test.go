@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"os"
 	"regexp"
 	"testing"
 
@@ -10,12 +11,17 @@ import (
 )
 
 func TestExamplesStartup(t *testing.T) {
+	vars := map[string]interface{}{
+		"client_id":     "",
+		"client_secret": "",
+	}
+	managedIdentityId := os.Getenv("MSI_ID")
+	if managedIdentityId != "" {
+		vars["managed_identity_principal_id"] = managedIdentityId
+	}
 	test_helper.RunE2ETest(t, "../../", "examples/startup", terraform.Options{
 		Upgrade: true,
-		Vars: map[string]interface{}{
-			"client_id":     "",
-			"client_secret": "",
-		},
+		Vars:    vars,
 	}, func(t *testing.T, output test_helper.TerraformOutput) {
 		aksId, ok := output["test_aks_id"].(string)
 		assert.True(t, ok)
@@ -24,8 +30,16 @@ func TestExamplesStartup(t *testing.T) {
 }
 
 func TestExamplesWithoutMonitor(t *testing.T) {
+	var vars map[string]interface{}
+	managedIdentityId := os.Getenv("MSI_ID")
+	if managedIdentityId != "" {
+		vars = map[string]interface{}{
+			"managed_identity_principal_id": managedIdentityId,
+		}
+	}
 	test_helper.RunE2ETest(t, "../../", "examples/without_monitor", terraform.Options{
 		Upgrade: true,
+		Vars:    vars,
 	}, func(t *testing.T, output test_helper.TerraformOutput) {
 		aksId, ok := output["test_aks_without_monitor_id"].(string)
 		assert.True(t, ok)
@@ -41,8 +55,16 @@ func TestExamplesWithoutMonitor(t *testing.T) {
 }
 
 func TestExamplesNamedCluster(t *testing.T) {
+	var vars map[string]interface{}
+	managedIdentityId := os.Getenv("MSI_ID")
+	if managedIdentityId != "" {
+		vars = map[string]interface{}{
+			"managed_identity_principal_id": managedIdentityId,
+		}
+	}
 	test_helper.RunE2ETest(t, "../../", "examples/named_cluster", terraform.Options{
 		Upgrade: true,
+		Vars:    vars,
 	}, func(t *testing.T, output test_helper.TerraformOutput) {
 		aksId, ok := output["test_aks_named_id"].(string)
 		assert.True(t, ok)
