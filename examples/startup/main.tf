@@ -16,12 +16,6 @@ locals {
   }
 }
 
-data "null_data_source" "resource_group" {
-  inputs = {
-    name = local.resource_group.name
-  }
-}
-
 resource "azurerm_virtual_network" "test" {
   name                = "${random_id.prefix.hex}-vn"
   address_space       = ["10.52.0.0/16"]
