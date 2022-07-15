@@ -4,5 +4,5 @@ output "test_aks_named_id" {
 
 output "test_aks_named_identity" {
   sensitive = true
-  value     = try(module.aks_cluster_name.system_assigned_identity[0], "")
+  value     = try(module.aks_cluster_name.cluster_identity, "")
 }
