@@ -64,7 +64,7 @@ terrafmt:
 
 goimports:
 	@echo "==> Fixing imports code with goimports..."
-	@find . -name '*.go' | grep -v vendor | while read f; do ./scripts/goimport-file.sh "$$f"; done
+	@find . -name '*.go' | grep -v vendor | while read f; do bash ./scripts/goimport-file.sh "$$f"; done
 
 pre-commit: tffmt terrafmt goimports fmt fumpt generate
 
