@@ -1,7 +1,3 @@
-output "test_aks_id" {
-  value = module.aks.aks_id
-}
-
 output "test_admin_client_certificate" {
   sensitive = true
   value     = module.aks.admin_client_certificate
@@ -34,14 +30,6 @@ output "test_admin_username" {
 
 output "test_aks_id" {
   value = module.aks.aks_id
-}
-
-output "test_aks_without_monitor_id" {
-  value = module.aks_without_monitor.aks_id
-}
-
-output "test_aks_without_monitor_identity" {
-  value = module.aks_without_monitor.cluster_identity
 }
 
 output "test_client_certificate" {
