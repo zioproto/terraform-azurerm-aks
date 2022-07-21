@@ -7,7 +7,7 @@ terraform {
       version = "~> 3.11"
     }
     tls = {
-      source = "hashicorp/tls"
+      source  = "hashicorp/tls"
       version = "~> 3.1"
     }
   }
