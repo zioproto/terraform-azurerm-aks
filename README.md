@@ -40,98 +40,214 @@ This Terraform module deploys a Kubernetes cluster on Azure using AKS (Azure Kub
 
 -> **NOTE:** If you have not assigned `client_id` or `client_secret`, A `SystemAssigned` identity will be created.
 
-## Usage in Terraform 0.13
+## Notice on Upgrade to V5.x
+
+V5.0.0 is a major version upgrade and a lot of breaking changes have been introduced. Extremely cautious must be taken during the upgrade to avoid resource replacement and downtime by accident.
+
+Running the `terraform plan` first to inspect the plan is strongly advised.
+
+### Terraform and terraform-provider-azurerm version restrictions
+
+Now Terraform core's lowest version is v1.2.0 and terraform-provider-azurerm's lowest version is v3.3.0.
+
+### variable `user_assigned_identity_id` has been renamed.
+
+variable `user_assigned_identity_id` has been renamed to `identity_ids` and it's type has been changed from `string` to `list(string)`.
+
+### `addon_profile` in outputs is no longer available.
+
+It has been broken into the following new outputs:
+
+* `aci_connector_linux`
+* `aci_connector_linux_enabled`
+* `azure_policy_enabled`
+* `http_application_routing_enabled`
+* `ingress_application_gateway`
+* `ingress_application_gateway_enabled`
+* `key_vault_secrets_provider`
+* `key_vault_secrets_provider_enabled`
+* `oms_agent`
+* `oms_agent_enabled`
+* `open_service_mesh_enabled`
+
+### The following variables have been renamed from `enable_xxx` to `xxx_enabled`
+
+* `enable_http_application_routing` has been renamed to `http_application_routing_enabled`
+* `enable_ingress_application_gateway` has been renamed to `ingress_application_gateway_enabled`
+* `enable_log_analytics_workspace` has been renamed to `log_analytics_workspace_enabled`
+* `enable_open_service_mesh` has been renamed to `open_service_mesh_enabled`
+* `enable_role_based_access_control` has been renamed to `role_based_access_control_enabled`
+
+### `nullable = true` has been added to the following variables so setting them to `null` explicitly will use the default value
+
+* `log_analytics_workspace_enable`
+* `os_disk_type`
+* `private_cluster_enabled`
+* `rbac_aad_managed`
+* `rbac_aad_admin_group_object_ids`
+* `network_policy`
+* `enable_node_public_ip`
+
+### `var.admin_username`'s default value has been removed
+
+In v4.x `var.admin_username` has a default value `azureuser` and has been removed in V5.0.0. Since the `admin_username` argument in `linux_profile` block is a ForceNew argument, any value change to this argument will trigger a Kubernetes cluster replacement **SO THE EXTREMELY CAUTIOUS MUST BE TAKEN**. The module's callers must set `var.admin_username` to `azureuser` explicitly if they didn't set it before.
+
+### `module.ssh-key` has been removed
+
+The file named `private_ssh_key` which contains the tls private key will be deleted since the `local_file` resource has been removed. Now the private key is exported via `generated_cluster_private_ssh_key` in output and the corresponding public key is exported via `generated_cluster_public_ssh_key` in output.
+
+A `moved` block has been added to relocate the existing `tls_private_key` resource to the new address. If the `var.admin_username` is not `null`, no action is needed.
+
+Resource `tls_private_key`'s creation now is conditional. Users may see the destruction of existing `tls_private_key` in the generated plan if `var.admin_username` is `null`.
+
+### `system_assigned_identity` in the output has been renamed to `cluster_identity`
+
+The `system_assigned_identity` was:
 
 ```hcl
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_resource_group" "example" {
-  name     = "aks-resource-group"
-  location = "eastus"
-}
-
-module "network" {
-  source              = "Azure/network/azurerm"
-  resource_group_name = azurerm_resource_group.example.name
-  address_space       = "10.52.0.0/16"
-  subnet_prefixes     = ["10.52.0.0/24"]
-  subnet_names        = ["subnet1"]
-  depends_on          = [azurerm_resource_group.example]
-}
-
-data "azuread_group" "aks_cluster_admins" {
-  display_name = "AKS-cluster-admins"
-}
-
-module "aks" {
-  source                           = "Azure/aks/azurerm"
-  resource_group_name              = azurerm_resource_group.example.name
-  client_id                        = "your-service-principal-client-appid"
-  client_secret                    = "your-service-principal-client-password"
-  kubernetes_version               = "1.23.5"
-  orchestrator_version             = "1.23.5"
-  prefix                           = "prefix"
-  cluster_name                     = "cluster-name"
-  network_plugin                   = "azure"
-  vnet_subnet_id                   = module.network.vnet_subnets[0]
-  os_disk_size_gb                  = 50
-  sku_tier                         = "Paid" # defaults to Free
-  enable_role_based_access_control = true
-  rbac_aad_admin_group_object_ids  = [data.azuread_group.aks_cluster_admins.id]
-  rbac_aad_managed                 = true
-  private_cluster_enabled          = true # default value
-  enable_http_application_routing  = true
-  enable_azure_policy              = true
-  enable_open_service_mesh         = true
-  enable_auto_scaling              = true
-  enable_host_encryption           = true
-  agents_min_count                 = 1
-  agents_max_count                 = 2
-  agents_count                     = null # Please set `agents_count` `null` while `enable_auto_scaling` is `true` to avoid possible `agents_count` changes.
-  agents_max_pods                  = 100
-  agents_pool_name                 = "exnodepool"
-  agents_availability_zones        = ["1", "2"]
-  agents_type                      = "VirtualMachineScaleSets"
-
-  agents_labels = {
-    "nodepool" : "defaultnodepool"
-  }
-
-  agents_tags = {
-    "Agent" : "defaultnodepoolagent"
-  }
-
-  enable_ingress_application_gateway      = true
-  ingress_application_gateway_name        = "aks-agw"
-  ingress_application_gateway_subnet_cidr = "10.52.1.0/24"
-
-  network_policy                 = "azure"
-  net_profile_dns_service_ip     = "10.0.0.10"
-  net_profile_docker_bridge_cidr = "170.10.0.1/16"
-  net_profile_service_cidr       = "10.0.0.0/16"
-
-  depends_on = [module.network]
+output "system_assigned_identity" {
+  value = azurerm_kubernetes_cluster.main.identity
 }
 ```
 
-## Usage in Terraform 0.12
+Now it has been renamed to `cluster_identity`, and the block has been changed to:
+
+```hcl
+output "cluster_identity" {
+  description = "The `azurerm_kubernetes_cluster`'s `identity` block."
+  value       = try(azurerm_kubernetes_cluster.main.identity[0], null)
+}
+```
+
+The callers who used to read the cluster's identity block need to remove the index in their expression, from `module.aks.system_assigned_identity[0]` to `module.aks.cluster_identity`.
+
+### The following outputs are now sensitive. All outputs referenced them must declare sensitive too
+
+* `client_certificate`
+* `client_key`
+* `cluster_ca_certificate`
+* `generated_cluster_private_ssh_key`
+* `host`
+* `kube_admin_config_raw`
+* `kube_config_raw`
+* `password`
+* `username`
+
+## Usage in Terraform 1.2.0
 
 ```hcl
 provider "azurerm" {
   features {}
 }
 
-resource "azurerm_resource_group" "example" {
-  name     = "aks-resource-group"
-  location = "eastus"
+resource "random_id" "prefix" {
+  byte_length = 8
+}
+resource "azurerm_resource_group" "main" {
+  location = var.location
+  name     = "${random_id.prefix.hex}-rg"
+}
+
+resource "azurerm_virtual_network" "test" {
+  name                = "${random_id.prefix.hex}-vn"
+  resource_group_name = azurerm_resource_group.main.name
+  address_space       = ["10.52.0.0/16"]
+  location            = azurerm_resource_group.main.location
+}
+
+resource "azurerm_subnet" "test" {
+  name                 = "${random_id.prefix.hex}-sn"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.test.name
+  address_prefixes     = ["10.52.0.0/24"]
+}
+
+resource "azurerm_user_assigned_identity" "test" {
+  name                = "${random_id.prefix.hex}-identity"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
 }
 
 module "aks" {
-  source              = "Azure/aks/azurerm"
-  resource_group_name = azurerm_resource_group.example.name
-  prefix              = "prefix"
+  source = "../.."
+
+  prefix                    = "prefix-${random_id.prefix.hex}"
+  resource_group_name       = azurerm_resource_group.main.name
+  agents_availability_zones = ["1", "2"]
+  agents_count              = null
+  agents_labels             = {
+    "node1" : "label1"
+  }
+  agents_max_count = 2
+  agents_max_pods  = 100
+  agents_min_count = 1
+  agents_pool_name = "testnodepool"
+  agents_tags      = {
+    "Agent" : "agentTag"
+  }
+  agents_type                             = "VirtualMachineScaleSets"
+  azure_policy_enabled                    = true
+  client_id                               = var.client_id
+  client_secret                           = var.client_secret
+  enable_auto_scaling                     = true
+  enable_host_encryption                  = true
+  http_application_routing_enabled        = true
+  ingress_application_gateway_enabled     = true
+  log_analytics_workspace_enabled         = true
+  role_based_access_control_enabled       = true
+  ingress_application_gateway_name        = "${random_id.prefix.hex}-agw"
+  ingress_application_gateway_subnet_cidr = "10.52.1.0/24"
+  local_account_disabled                  = true
+  net_profile_dns_service_ip              = "10.0.0.10"
+  net_profile_docker_bridge_cidr          = "170.10.0.1/16"
+  net_profile_service_cidr                = "10.0.0.0/16"
+  network_plugin                          = "azure"
+  network_policy                          = "azure"
+  os_disk_size_gb                         = 60
+  private_cluster_enabled                 = true
+  rbac_aad_managed                        = true
+  sku_tier                                = "Paid"
+  vnet_subnet_id                          = azurerm_subnet.test.id
+
+  depends_on = [azurerm_resource_group.main]
+}
+
+module "aks_without_monitor" {
+  source = "../.."
+
+  prefix                            = "prefix2-${random_id.prefix.hex}"
+  resource_group_name               = azurerm_resource_group.main.name
+  azure_policy_enabled              = true
+  log_analytics_workspace_enabled   = true
+  role_based_access_control_enabled = true
+  local_account_disabled            = true
+  net_profile_pod_cidr              = "10.1.0.0/16"
+  private_cluster_enabled           = true
+  rbac_aad_managed                  = true
+
+  depends_on = [azurerm_resource_group.main]
+}
+
+module "aks_cluster_name" {
+  source = "../.."
+
+  prefix                               = "prefix"
+  resource_group_name                  = azurerm_resource_group.main.name
+  # Not necessary, just for demo purpose.
+  admin_username                       = "azureuser"
+  azure_policy_enabled                 = true
+  cluster_log_analytics_workspace_name = "test-cluster"
+  cluster_name                         = "test-cluster"
+  log_analytics_workspace_enabled      = true
+  role_based_access_control_enabled    = true
+  identity_ids                         = [azurerm_user_assigned_identity.test.id]
+  identity_type                        = "UserAssigned"
+  local_account_disabled               = true
+  net_profile_pod_cidr                 = "10.1.0.0/16"
+  private_cluster_enabled              = true
+  rbac_aad_managed                     = true
+
+  depends_on = [azurerm_resource_group.main]
 }
 ```
 
@@ -196,6 +312,7 @@ For Windows users:
 $ docker run --rm -v ${pwd}:/src -w /src \
 aztfmod.azurecr.io/testrunner/tfmodule-testrunner:v0.0.1 make pre-commit
 ```
+To try the module, please run `terraform apply` command in `test/fixture` folder.
 
 ## Test
 
@@ -211,7 +328,7 @@ We provide 2 ways to build, run, and test the module on a local development mach
 
 - [Ruby **(~> 2.3)**](https://www.ruby-lang.org/en/downloads/)
 - [Bundler **(~> 1.15)**](https://bundler.io/)
-- [Terraform **(~> 0.11.7)**](https://www.terraform.io/downloads.html)
+- [Terraform **(>= 1.2.0)**](https://www.terraform.io/downloads.html)
 - [Golang **(~> 1.10.3)**](https://golang.org/dl/)
 
 #### Environment setup
@@ -312,13 +429,22 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 |---------------------------------------------------------------------------|----------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.2.0 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm)       | ~> 3.11  |
+| Name                                                                      | Version |
+|---------------------------------------------------------------------------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.2  |
+| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm)       | ~> 3.3  |
 
 ## Providers
 
 | Name                                                          | Version |
 |---------------------------------------------------------------|---------|
+<<<<<<< HEAD
 | <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.11 |
 | <a name="provider_tls"></a> [tls](#provider\_tls)             | n/a     |
+=======
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 3.13.0  |
+| <a name="provider_tls"></a> [tls](#provider\_tls)             | 3.4.0   |
+>>>>>>> house-keeping
 
 ## Modules
 
@@ -358,6 +484,7 @@ No modules.
 | <a name="input_disk_encryption_set_id"></a> [disk\_encryption\_set\_id](#input\_disk\_encryption\_set\_id)                                                                    | (Optional) The ID of the Disk Encryption Set which should be used for the Nodes and Volumes. More information [can be found in the documentation](https://docs.microsoft.com/azure/aks/azure-disk-customer-managed-keys). Changing this forces a new resource to be created.                                                     | `string`                                                              | `null`                      |    no    |
 | <a name="input_enable_auto_scaling"></a> [enable\_auto\_scaling](#input\_enable\_auto\_scaling)                                                                               | Enable node pool autoscaling                                                                                                                                                                                                                                                                                                     | `bool`                                                                | `false`                     |    no    |
 | <a name="input_enable_host_encryption"></a> [enable\_host\_encryption](#input\_enable\_host\_encryption)                                                                      | Enable Host Encryption for default node pool. Encryption at host feature must be enabled on the subscription: https://docs.microsoft.com/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli                                                                                                                     | `bool`                                                                | `false`                     |    no    |
+<<<<<<< HEAD
 | <a name="input_enable_http_application_routing"></a> [enable\_http\_application\_routing](#input\_enable\_http\_application\_routing)                                         | Enable HTTP Application Routing Addon (forces recreation).                                                                                                                                                                                                                                                                       | `bool`                                                                | `false`                     |    no    |
 | <a name="input_enable_ingress_application_gateway"></a> [enable\_ingress\_application\_gateway](#input\_enable\_ingress\_application\_gateway)                                | Whether to deploy the Application Gateway ingress controller to this Kubernetes Cluster?                                                                                                                                                                                                                                         | `bool`                                                                | `false`                     |    no    |
 | <a name="input_enable_log_analytics_workspace"></a> [enable\_log\_analytics\_workspace](#input\_enable\_log\_analytics\_workspace)                                            | Enable the integration of azurerm\_log\_analytics\_workspace and azurerm\_log\_analytics\_solution: https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-onboard                                                                                                                                   | `bool`                                                                | `true`                      |    no    |
@@ -366,6 +493,13 @@ No modules.
 | <a name="input_enable_role_based_access_control"></a> [enable\_role\_based\_access\_control](#input\_enable\_role\_based\_access\_control)                                    | Enable Role Based Access Control.                                                                                                                                                                                                                                                                                                | `bool`                                                                | `false`                     |    no    |
 | <a name="input_identity_ids"></a> [identity\_ids](#input\_identity\_ids)                                                                                                      | (Optional) Specifies a list of User Assigned Managed Identity IDs to be assigned to this Kubernetes Cluster.                                                                                                                                                                                                                     | `list(string)`                                                        | `null`                      |    no    |
 | <a name="input_identity_type"></a> [identity\_type](#input\_identity\_type)                                                                                                   | (Optional) The type of identity used for the managed cluster. Conflict with `client_id` and `client_secret`. Possible values are `SystemAssigned`, `UserAssigned`, `SystemAssigned, UserAssigned`(to enable both). If `UserAssigned` or `SystemAssigned, UserAssigned` is set, an `identity_ids` must be set as well.            | `string`                                                              | `"SystemAssigned"`          |    no    |
+=======
+| <a name="input_enable_node_public_ip"></a> [enable\_node\_public\_ip](#input\_enable\_node\_public\_ip)                                                                       | (Optional) Should nodes in this Node Pool have a Public IP Address? Defaults to false.                                                                                                                                                                                                                                           | `bool`                                                                | `false`                     |    no    |
+| <a name="input_http_application_routing_enabled"></a> [http\_application\_routing\_enabled](#input\_http\_application\_routing\_enabled)                                      | Enable HTTP Application Routing Addon (forces recreation).                                                                                                                                                                                                                                                                       | `bool`                                                                | `false`                     |    no    |
+| <a name="input_identity_ids"></a> [identity\_ids](#input\_identity\_ids)                                                                                                      | (Optional) Specifies a list of User Assigned Managed Identity IDs to be assigned to this Kubernetes Cluster.                                                                                                                                                                                                                     | `list(string)`                                                        | `null`                      |    no    |
+| <a name="input_identity_type"></a> [identity\_type](#input\_identity\_type)                                                                                                   | (Optional) The type of identity used for the managed cluster. Conflict with `client_id` and `client_secret`. Possible values are `SystemAssigned`, `UserAssigned`, `SystemAssigned, UserAssigned`(to enable both). If `UserAssigned` or `SystemAssigned, UserAssigned` is set, an `identity_ids` must be set as well.            | `string`                                                              | `"SystemAssigned"`          |    no    |
+| <a name="input_ingress_application_gateway_enabled"></a> [ingress\_application\_gateway\_enabled](#input\_ingress\_application\_gateway\_enabled)                             | Whether to deploy the Application Gateway ingress controller to this Kubernetes Cluster?                                                                                                                                                                                                                                         | `bool`                                                                | `false`                     |    no    |
+>>>>>>> house-keeping
 | <a name="input_ingress_application_gateway_id"></a> [ingress\_application\_gateway\_id](#input\_ingress\_application\_gateway\_id)                                            | The ID of the Application Gateway to integrate with the ingress controller of this Kubernetes Cluster.                                                                                                                                                                                                                           | `string`                                                              | `null`                      |    no    |
 | <a name="input_ingress_application_gateway_name"></a> [ingress\_application\_gateway\_name](#input\_ingress\_application\_gateway\_name)                                      | The name of the Application Gateway to be used or created in the Nodepool Resource Group, which in turn will be integrated with the ingress controller of this Kubernetes Cluster.                                                                                                                                               | `string`                                                              | `null`                      |    no    |
 | <a name="input_ingress_application_gateway_subnet_cidr"></a> [ingress\_application\_gateway\_subnet\_cidr](#input\_ingress\_application\_gateway\_subnet\_cidr)               | The subnet CIDR to be used to create an Application Gateway, which in turn will be integrated with the ingress controller of this Kubernetes Cluster.                                                                                                                                                                            | `string`                                                              | `null`                      |    no    |
@@ -376,6 +510,10 @@ No modules.
 | <a name="input_location"></a> [location](#input\_location)                                                                                                                    | Location of cluster, if not defined it will be read from the resource-group                                                                                                                                                                                                                                                      | `string`                                                              | `null`                      |    no    |
 | <a name="input_log_analytics_solution_id"></a> [log\_analytics\_solution\_id](#input\_log\_analytics\_solution\_id)                                                           | (Optional) Existing azurerm\_log\_analytics\_solution ID. Providing ID disables creation of azurerm\_log\_analytics\_solution.                                                                                                                                                                                                   | `string`                                                              | `null`                      |    no    |
 | <a name="input_log_analytics_workspace"></a> [log\_analytics\_workspace](#input\_log\_analytics\_workspace)                                                                   | (Optional) Existing azurerm\_log\_analytics\_workspace to attach azurerm\_log\_analytics\_solution. Providing the config disables creation of azurerm\_log\_analytics\_workspace.                                                                                                                                                | <pre>object({<br>    id   = string<br>    name = string<br>  })</pre> | `null`                      |    no    |
+<<<<<<< HEAD
+=======
+| <a name="input_log_analytics_workspace_enabled"></a> [log\_analytics\_workspace\_enabled](#input\_log\_analytics\_workspace\_enabled)                                         | Enable the integration of azurerm\_log\_analytics\_workspace and azurerm\_log\_analytics\_solution: https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-onboard                                                                                                                                   | `bool`                                                                | `true`                      |    no    |
+>>>>>>> house-keeping
 | <a name="input_log_analytics_workspace_resource_group_name"></a> [log\_analytics\_workspace\_resource\_group\_name](#input\_log\_analytics\_workspace\_resource\_group\_name) | (Optional) Resource group name to create azurerm\_log\_analytics\_solution.                                                                                                                                                                                                                                                      | `string`                                                              | `null`                      |    no    |
 | <a name="input_log_analytics_workspace_sku"></a> [log\_analytics\_workspace\_sku](#input\_log\_analytics\_workspace\_sku)                                                     | The SKU (pricing level) of the Log Analytics workspace. For new subscriptions the SKU should be set to PerGB2018                                                                                                                                                                                                                 | `string`                                                              | `"PerGB2018"`               |    no    |
 | <a name="input_log_retention_in_days"></a> [log\_retention\_in\_days](#input\_log\_retention\_in\_days)                                                                       | The retention period for the logs in days                                                                                                                                                                                                                                                                                        | `number`                                                              | `30`                        |    no    |
@@ -389,6 +527,10 @@ No modules.
 | <a name="input_node_resource_group"></a> [node\_resource\_group](#input\_node\_resource\_group)                                                                               | The auto-generated Resource Group which contains the resources for this Managed Kubernetes Cluster. Changing this forces a new resource to be created.                                                                                                                                                                           | `string`                                                              | `null`                      |    no    |
 | <a name="input_oidc_issuer_enabled"></a> [oidc\_issuer\_enabled](#input\_oidc\_issuer\_enabled)                                                                               | Enable or Disable the OIDC issuer URL. Defaults to false.                                                                                                                                                                                                                                                                        | `bool`                                                                | `false`                     |    no    |
 | <a name="input_only_critical_addons_enabled"></a> [only\_critical\_addons\_enabled](#input\_only\_critical\_addons\_enabled)                                                  | (Optional) Enabling this option will taint default node pool with `CriticalAddonsOnly=true:NoSchedule` taint. Changing this forces a new resource to be created.                                                                                                                                                                 | `bool`                                                                | `null`                      |    no    |
+<<<<<<< HEAD
+=======
+| <a name="input_open_service_mesh_enabled"></a> [open\_service\_mesh\_enabled](#input\_open\_service\_mesh\_enabled)                                                           | Is Open Service Mesh enabled? For more details, please visit [Open Service Mesh for AKS](https://docs.microsoft.com/azure/aks/open-service-mesh-about).                                                                                                                                                                          | `bool`                                                                | `null`                      |    no    |
+>>>>>>> house-keeping
 | <a name="input_orchestrator_version"></a> [orchestrator\_version](#input\_orchestrator\_version)                                                                              | Specify which Kubernetes release to use for the orchestration layer. The default used is the latest Kubernetes version available in the region                                                                                                                                                                                   | `string`                                                              | `null`                      |    no    |
 | <a name="input_os_disk_size_gb"></a> [os\_disk\_size\_gb](#input\_os\_disk\_size\_gb)                                                                                         | Disk size of nodes in GBs.                                                                                                                                                                                                                                                                                                       | `number`                                                              | `50`                        |    no    |
 | <a name="input_os_disk_type"></a> [os\_disk\_type](#input\_os\_disk\_type)                                                                                                    | The type of disk which should be used for the Operating System. Possible values are `Ephemeral` and `Managed`. Defaults to `Managed`. Changing this forces a new resource to be created.                                                                                                                                         | `string`                                                              | `"Managed"`                 |    no    |
@@ -407,6 +549,11 @@ No modules.
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)                                                                               | The resource group name to be imported                                                                                                                                                                                                                                                                                           | `string`                                                              | n/a                         |   yes    |
 | <a name="input_secret_rotation_enabled"></a> [secret\_rotation\_enabled](#input\_secret\_rotation\_enabled)                                                                   | Is secret rotation enabled? This variable is only used when enable\_key\_vault\_secrets\_provider is true and defaults to false                                                                                                                                                                                                  | `bool`                                                                | `false`                     |    no    |
 | <a name="input_secret_rotation_interval"></a> [secret\_rotation\_interval](#input\_secret\_rotation\_interval)                                                                | The interval to poll for secret rotation. This attribute is only set when secret\_rotation is true and defaults to 2m                                                                                                                                                                                                            | `string`                                                              | `"2m"`                      |    no    |
+=======
+| <a name="input_role_based_access_control_enabled"></a> [role\_based\_access\_control\_enabled](#input\_role\_based\_access\_control\_enabled)                                 | Enable Role Based Access Control.                                                                                                                                                                                                                                                                                                | `bool`                                                                | `false`                     |    no    |
+| <a name="input_secret_rotation_enabled"></a> [secret\_rotation\_enabled](#input\_secret\_rotation\_enabled)                                                                   | Is secret rotation enabled? This variable is only used when `key_vault_secrets_provider_enabled` is `true` and defaults to `false`                                                                                                                                                                                               | `bool`                                                                | `false`                     |    no    |
+| <a name="input_secret_rotation_interval"></a> [secret\_rotation\_interval](#input\_secret\_rotation\_interval)                                                                | The interval to poll for secret rotation. This attribute is only set when `secret_rotation` is `true` and defaults to `2m`                                                                                                                                                                                                       | `string`                                                              | `"2m"`                      |    no    |
+>>>>>>> house-keeping
 | <a name="input_sku_tier"></a> [sku\_tier](#input\_sku\_tier)                                                                                                                  | The SKU Tier that should be used for this Kubernetes Cluster. Possible values are Free and Paid                                                                                                                                                                                                                                  | `string`                                                              | `"Free"`                    |    no    |
 | <a name="input_tags"></a> [tags](#input\_tags)                                                                                                                                | Any tags that should be present on the AKS cluster resources                                                                                                                                                                                                                                                                     | `map(string)`                                                         | `{}`                        |    no    |
 | <a name="input_vnet_subnet_id"></a> [vnet\_subnet\_id](#input\_vnet\_subnet\_id)                                                                                              | (Optional) The ID of a Subnet where the Kubernetes Node Pool should exist. Changing this forces a new resource to be created.                                                                                                                                                                                                    | `string`                                                              | `null`                      |    no    |

@@ -1,4 +1,6 @@
 terraform {
+  required_version = ">= 1.2"
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -8,10 +10,12 @@ terraform {
       source  = "anschoewe/curl"
       version = ">=1.0.2"
     }
+    random = {
+      source = "hashicorp/random"
+      version = ">=3.3.0"
+    }
   }
 }
-
-provider "curl" {}
 
 provider "azurerm" {
   features {
@@ -19,9 +23,11 @@ provider "azurerm" {
       prevent_deletion_if_contains_resources = false
     }
     key_vault {
-      recover_soft_deleted_key_vaults    = false
       purge_soft_delete_on_destroy       = false
       purge_soft_deleted_keys_on_destroy = false
+      recover_soft_deleted_key_vaults    = false
     }
   }
 }
+
+provider "curl" {}
