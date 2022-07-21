@@ -32,31 +32,31 @@ resource "azurerm_subnet" "test" {
 }
 
 module "aks" {
-  source                           = "../.."
-  prefix                           = "prefix-${random_id.prefix.hex}"
-  resource_group_name              = local.resource_group.name
-  client_id                        = var.client_id
-  client_secret                    = var.client_secret
-  network_plugin                   = "azure"
-  vnet_subnet_id                   = azurerm_subnet.test.id
-  os_disk_size_gb                  = 60
-  disk_encryption_set_id           = azurerm_disk_encryption_set.des.id
-  enable_http_application_routing  = true
-  azure_policy_enabled             = true
-  enable_host_encryption           = true
-  enable_role_based_access_control = true
-  rbac_aad_managed                 = true
-  enable_log_analytics_workspace   = true
-  sku_tier                         = "Paid"
-  private_cluster_enabled          = true
-  enable_auto_scaling              = true
-  agents_min_count                 = 1
-  agents_max_count                 = 2
-  agents_count                     = null
-  agents_max_pods                  = 100
-  agents_pool_name                 = "testnodepool"
-  agents_availability_zones        = ["1", "2"]
-  agents_type                      = "VirtualMachineScaleSets"
+  source                            = "../.."
+  prefix                            = "prefix-${random_id.prefix.hex}"
+  resource_group_name               = local.resource_group.name
+  client_id                         = var.client_id
+  client_secret                     = var.client_secret
+  network_plugin                    = "azure"
+  vnet_subnet_id                    = azurerm_subnet.test.id
+  os_disk_size_gb                   = 60
+  disk_encryption_set_id            = azurerm_disk_encryption_set.des.id
+  http_application_routing_enabled  = true
+  azure_policy_enabled              = true
+  enable_host_encryption            = true
+  role_based_access_control_enabled = true
+  rbac_aad_managed                  = true
+  log_analytics_workspace_enabled   = true
+  sku_tier                          = "Paid"
+  private_cluster_enabled           = true
+  enable_auto_scaling               = true
+  agents_min_count                  = 1
+  agents_max_count                  = 2
+  agents_count                      = null
+  agents_max_pods                   = 100
+  agents_pool_name                  = "testnodepool"
+  agents_availability_zones         = ["1", "2"]
+  agents_type                       = "VirtualMachineScaleSets"
 
   agents_labels = {
     "node1" : "label1"
@@ -66,7 +66,7 @@ module "aks" {
     "Agent" : "agentTag"
   }
 
-  enable_ingress_application_gateway      = true
+  ingress_application_gateway_enabled     = true
   ingress_application_gateway_name        = "${random_id.prefix.hex}-agw"
   ingress_application_gateway_subnet_cidr = "10.52.1.0/24"
 

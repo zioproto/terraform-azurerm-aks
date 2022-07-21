@@ -43,9 +43,9 @@ module "aks_cluster_name" {
   prefix                               = "prefix"
   resource_group_name                  = local.resource_group.name
   disk_encryption_set_id               = azurerm_disk_encryption_set.des.id
-  enable_role_based_access_control     = true
+  role_based_access_control_enabled    = true
   rbac_aad_managed                     = true
-  enable_log_analytics_workspace       = true
+  log_analytics_workspace_enabled      = true
   private_cluster_enabled              = true
   admin_username                       = null
   cluster_log_analytics_workspace_name = "test-cluster"
