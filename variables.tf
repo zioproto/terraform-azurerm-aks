@@ -450,3 +450,15 @@ variable "vnet_subnet_id" {
   description = "(Optional) The ID of a Subnet where the Kubernetes Node Pool should exist. Changing this forces a new resource to be created."
   default     = null
 }
+
+variable "aci_connector_linux_enabled" {
+  description = "Enable Virtual Node pool"
+  type        = bool
+  default     = false
+}
+
+variable "aci_connector_linux_subnet_name" {
+  description = "(Optional) aci_connector_linux subnet name"
+  type        = string
+  default     = null
+}
