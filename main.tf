@@ -122,6 +122,17 @@ resource "azurerm_kubernetes_cluster" "main" {
       subnet_id    = var.ingress_application_gateway_subnet_id
     }
   }
+
+  dynamic "aci_connector_linux" {
+    for_each = var.aci_connector_linux_enabled ? ["aci_connector_linux"] : []
+
+    content {
+      enabled     = var.ingress_application_gateway_enabled
+      subnet_name = var.aci_connector_linux_subnet_name
+
+    }
+
+  }
   dynamic "key_vault_secrets_provider" {
     for_each = var.key_vault_secrets_provider_enabled ? ["key_vault_secrets_provider"] : []
 
