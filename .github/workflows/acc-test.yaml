@@ -14,7 +14,7 @@ env:
 
 jobs:
   acc-tests:
-    runs-on: [self-hosted, 1ES.Pool=AzureVerifiedTerraformModule]
+    runs-on: [self-hosted, 1ES.Pool=pool-terraform-azurerm-aks]
     environment:
       name: acctests
     steps:
