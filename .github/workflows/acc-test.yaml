@@ -10,7 +10,7 @@ on:
       - '**.md'
 
 env:
-  MSI_ID: '45a3f73e-5e16-4851-a91a-5c608284857b'
+  MSI_ID: '70481f09-6a46-4f21-bfe0-99cf3f9faea3'
 
 jobs:
   acc-tests:
