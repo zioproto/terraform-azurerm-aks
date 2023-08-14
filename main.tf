@@ -704,4 +704,3 @@ data "azurerm_user_assigned_identity" "cluster_identity" {
   name                = split("/", var.identity_ids[0])[8]
   resource_group_name = split("/", var.identity_ids[0])[4]
 }
-
