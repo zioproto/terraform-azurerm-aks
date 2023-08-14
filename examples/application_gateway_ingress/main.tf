@@ -123,6 +123,17 @@ resource "azurerm_application_gateway" "appgw" {
     ]
   }
 }
+resource azurerm_role_assignment "appgw1" {
+  scope                = azurerm_resource_group.main[0].id
+  role_definition_name = "Reader"
+  principal_id         = module.aks.ingress_application_gateway.ingress_application_gateway_identity[0].object_id
+}
+
+resource azurerm_role_assignment "appgw2" {
+  scope                = azurerm_application_gateway.appgw.id
+  role_definition_name = "Contributor"
+  principal_id         = module.aks.ingress_application_gateway.ingress_application_gateway_identity[0].object_id
+}
 
 module "aks" {
   source = "../.."
